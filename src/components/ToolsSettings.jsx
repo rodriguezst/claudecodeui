@@ -43,6 +43,20 @@ function ToolsSettings({ isOpen, onClose }) {
   const [mcpToolsLoading, setMcpToolsLoading] = useState({});
   const [activeTab, setActiveTab] = useState('tools');
 
+  // Model selection state
+  const [selectedModel, setSelectedModel] = useState(() => {
+    const saved = localStorage.getItem('claude-model-selection');
+    return saved ? JSON.parse(saved) : { type: 'claude', model: 'sonnet' };
+  });
+  const [customEndpoint, setCustomEndpoint] = useState(() => {
+    const saved = localStorage.getItem('claude-custom-endpoint');
+    return saved || '';
+  });
+  const [apiKey, setApiKey] = useState(() => {
+    const saved = localStorage.getItem('claude-custom-api-key');
+    return saved || '';
+  });
+
   // Common tool patterns
   const commonTools = [
     'Bash(git log:*)',
@@ -60,6 +74,21 @@ function ToolsSettings({ isOpen, onClose }) {
     'WebFetch',
     'WebSearch'
   ];
+
+  // Available models configuration
+  const modelOptions = {
+    claude: [
+      { value: 'sonnet', label: 'Claude 3.5 Sonnet', description: 'Balanced performance and speed' },
+      { value: 'opus', label: 'Claude 3 Opus', description: 'Highest intelligence, slower' },
+      { value: 'haiku', label: 'Claude 3 Haiku', description: 'Fastest, most cost-effective' }
+    ],
+    thirdParty: [
+      { value: 'gpt-4', label: 'GPT-4', description: 'OpenAI GPT-4' },
+      { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo', description: 'OpenAI GPT-3.5 Turbo' },
+      { value: 'gemini-pro', label: 'Gemini Pro', description: 'Google Gemini Pro' },
+      { value: 'custom', label: 'Custom Model', description: 'Custom LLM endpoint' }
+    ]
+  };
 
   // MCP API functions
   const fetchMcpServers = async () => {
@@ -318,9 +347,17 @@ function ToolsSettings({ isOpen, onClose }) {
         lastUpdated: new Date().toISOString()
       };
       
-      
       // Save to localStorage
       localStorage.setItem('claude-tools-settings', JSON.stringify(settings));
+      
+      // Save model selection settings separately
+      localStorage.setItem('claude-model-selection', JSON.stringify(selectedModel));
+      if (customEndpoint) {
+        localStorage.setItem('claude-custom-endpoint', customEndpoint);
+      }
+      if (apiKey) {
+        localStorage.setItem('claude-custom-api-key', apiKey);
+      }
       
       setSaveStatus('success');
       
@@ -537,6 +574,16 @@ function ToolsSettings({ isOpen, onClose }) {
                 Tools
               </button>
               <button
+                onClick={() => setActiveTab('models')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'models'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Models
+              </button>
+              <button
                 onClick={() => setActiveTab('appearance')}
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'appearance'
@@ -544,12 +591,116 @@ function ToolsSettings({ isOpen, onClose }) {
                     : 'border-transparent text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Appearance
               </button>
             </div>
           </div>
 
           <div className="p-4 md:p-6 space-y-6 md:space-y-8 pb-safe-area-inset-bottom">
+            
+            {/* Models Tab */}
+            {activeTab === 'models' && (
+              <div className="space-y-6 md:space-y-8">
+                {/* Model Selection */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Settings className="w-5 h-5 text-purple-500" />
+                    <h3 className="text-lg font-medium text-foreground">
+                      Model Selection
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Model Provider
+                      </label>
+                      <select
+                        value={selectedModel.type}
+                        onChange={(e) => setSelectedModel({ type: e.target.value, model: '' })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="claude">Claude (Anthropic)</option>
+                        <option value="thirdParty">Third Party Models</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Model
+                      </label>
+                      <select
+                        value={selectedModel.model}
+                        onChange={(e) => setSelectedModel({ ...selectedModel, model: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">Select a model...</option>
+                        {modelOptions[selectedModel.type]?.map((model) => (
+                          <option key={model.value} value={model.value}>
+                            {model.label}
+                          </option>
+                        ))}
+                      </select>
+                      {selectedModel.model && modelOptions[selectedModel.type]?.find(m => m.value === selectedModel.model) && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {modelOptions[selectedModel.type].find(m => m.value === selectedModel.model).description}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Custom endpoint configuration for third-party models */}
+                    {selectedModel.type === 'thirdParty' && (
+                      <div className="space-y-4 p-4 bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg">
+                        <h4 className="font-medium text-foreground">Third Party Configuration</h4>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            API Endpoint (optional)
+                          </label>
+                          <Input
+                            value={customEndpoint}
+                            onChange={(e) => setCustomEndpoint(e.target.value)}
+                            placeholder="https://api.example.com/v1"
+                            className="w-full"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Leave empty to use default endpoints for supported models
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
+                            API Key
+                          </label>
+                          <Input
+                            type="password"
+                            value={apiKey}
+                            onChange={(e) => setApiKey(e.target.value)}
+                            placeholder="Your API key"
+                            className="w-full"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Required for third-party models. Stored locally and securely.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Model Info */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                    <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">
+                      Model Selection Info:
+                    </h4>
+                    <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+                      <li><strong>Claude models:</strong> Use your existing Anthropic API key or claude.ai subscription</li>
+                      <li><strong>Third-party models:</strong> Route requests through @musistudio/claude-code-router</li>
+                      <li><strong>Custom endpoints:</strong> Support for any OpenAI-compatible API</li>
+                      <li><strong>Model switching:</strong> You can also change models on-demand during conversations</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            )}
             
             {/* Appearance Tab */}
             {activeTab === 'appearance' && (

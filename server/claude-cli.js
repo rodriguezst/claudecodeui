@@ -2,12 +2,26 @@ import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
 import os from 'os';
+import { spawnWithRouter, abortRouterSession } from './claude-router.js';
 
 let activeClaudeProcesses = new Map(); // Track active processes by session ID
 
 async function spawnClaude(command, options = {}, ws) {
+  const { modelConfig } = options;
+  
+  // Route to third-party models using claude-code-router
+  if (modelConfig?.type === 'thirdParty' && modelConfig?.model && modelConfig?.model !== 'custom') {
+    console.log('🔀 Routing to third-party model via claude-code-router');
+    try {
+      return await spawnWithRouter(command, options, ws);
+    } catch (error) {
+      console.error('❌ Router failed, falling back to Claude:', error);
+      // Continue with standard Claude process as fallback
+    }
+  }
+  
   return new Promise(async (resolve, reject) => {
-    const { sessionId, projectPath, cwd, resume, toolsSettings, permissionMode, images } = options;
+    const { sessionId, projectPath, cwd, resume, toolsSettings, permissionMode, images, modelConfig } = options;
     let capturedSessionId = sessionId; // Track session ID throughout the process
     let sessionCreatedSent = false; // Track if we've already sent session-created event
     
@@ -164,7 +178,19 @@ async function spawnClaude(command, options = {}, ws) {
     
     // Add model for new sessions
     if (!resume) {
-      args.push('--model', 'sonnet');
+      // Use model from configuration, fallback to 'sonnet'
+      const selectedModel = modelConfig?.model || 'sonnet';
+      console.log('🤖 Using model:', selectedModel);
+      
+      // Handle third-party models through claude-code-router
+      if (modelConfig?.type === 'thirdParty' && modelConfig?.model) {
+        // For third-party models, we'll use claude-code-router
+        // This will be implemented in the route handler
+        args.push('--model', selectedModel);
+      } else {
+        // Standard Claude models
+        args.push('--model', selectedModel);
+      }
     }
     
     // Add permission mode if specified (works for both new and resumed sessions)
@@ -367,6 +393,12 @@ async function spawnClaude(command, options = {}, ws) {
 }
 
 function abortClaudeSession(sessionId) {
+  // Try to abort router session first
+  if (abortRouterSession(sessionId)) {
+    return true;
+  }
+  
+  // Fall back to standard Claude process
   const process = activeClaudeProcesses.get(sessionId);
   if (process) {
     console.log(`🛑 Aborting Claude session: ${sessionId}`);

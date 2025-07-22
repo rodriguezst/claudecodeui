@@ -24,6 +24,7 @@ import ClaudeLogo from './ClaudeLogo.jsx';
 
 import ClaudeStatus from './ClaudeStatus';
 import { MicButton } from './MicButton.jsx';
+import ModelSelector from './ModelSelector';
 import { api } from '../utils/api';
 
 // Memoized message component to prevent unnecessary re-renders
@@ -1943,7 +1944,34 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
       };
     };
 
+    // Get model configuration from localStorage
+    const getModelConfig = () => {
+      try {
+        const savedModel = localStorage.getItem('claude-model-selection');
+        if (savedModel) {
+          const modelConfig = JSON.parse(savedModel);
+          
+          // Include additional config for third-party models
+          if (modelConfig.type === 'thirdParty') {
+            const customEndpoint = localStorage.getItem('claude-custom-endpoint');
+            const apiKey = localStorage.getItem('claude-custom-api-key');
+            return {
+              ...modelConfig,
+              customEndpoint,
+              apiKey
+            };
+          }
+          
+          return modelConfig;
+        }
+      } catch (error) {
+        console.error('Error loading model configuration:', error);
+      }
+      return { type: 'claude', model: 'sonnet' }; // Default
+    };
+
     const toolsSettings = getToolsSettings();
+    const modelConfig = getModelConfig();
 
     // Send command to Claude CLI via WebSocket with images
     sendMessage({
@@ -1956,7 +1984,8 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
         resume: !!currentSessionId,
         toolsSettings: toolsSettings,
         permissionMode: permissionMode,
-        images: uploadedImages // Pass images to backend
+        images: uploadedImages, // Pass images to backend
+        modelConfig: modelConfig // Pass model configuration
       }
     });
 
@@ -2235,8 +2264,13 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
           onAbort={handleAbortSession}
         />
         
-        {/* Permission Mode Selector with scroll to bottom button - Above input, clickable for mobile */}
+        {/* Permission Mode Selector with Model Selector - Above input, clickable for mobile */}
         <div className="max-w-4xl mx-auto mb-3">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            {/* Model Selector */}
+            <ModelSelector onShowSettings={onShowSettings} isMobile={isMobile} />
+          </div>
+          
           <div className="flex items-center justify-center gap-3">
             <button
               type="button"
