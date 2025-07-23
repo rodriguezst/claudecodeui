@@ -24,7 +24,7 @@ try {
   console.log('No .env file found or error reading it:', e.message);
 }
 
-console.log('PORT from env:', process.env.PORT);
+console.log('PORT from env:', process.env.CLAUDECODEUI_PORT);
 
 import express from 'express';
 import { WebSocketServer } from 'ws';
@@ -670,7 +670,7 @@ app.post('/api/transcribe', authenticateToken, async (req, res) => {
         return res.status(400).json({ error: 'No audio file provided' });
       }
       
-      const apiKey = process.env.OPENAI_API_KEY;
+      const apiKey = process.env.CLAUDECODEUI_OPENAI_API_KEY;
       if (!apiKey) {
         return res.status(500).json({ error: 'OpenAI API key not configured. Please set OPENAI_API_KEY in server environment.' });
       }
@@ -974,7 +974,7 @@ async function getFileTree(dirPath, maxDepth = 3, currentDepth = 0, showHidden =
   });
 }
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.CLAUDECODEUI_PORT || 3000;
 
 // Initialize database and start server
 async function startServer() {
