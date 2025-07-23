@@ -664,7 +664,7 @@ function ToolsSettings({ isOpen, onClose }) {
                           >
                             {availableModels.map(model => (
                               <option key={model.id} value={model.id}>
-                                {model.name} ({model.provider})
+                                {model.name} - {model.id}
                               </option>
                             ))}
                           </select>

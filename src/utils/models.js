@@ -14,30 +14,30 @@ export const fetchModelsFromAPI = async () => {
     // Fallback to hardcoded list if server call fails
     return [
       // Anthropic Models
-      { id: 'sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
-      { id: 'haiku', name: 'Claude 3.5 Haiku', provider: 'Anthropic' },
-      { id: 'opus', name: 'Claude 3 Opus', provider: 'Anthropic' },
+      { id: 'sonnet', name: 'Claude 3.5 Sonnet' },
+      { id: 'haiku', name: 'Claude 3.5 Haiku' },
+      { id: 'opus', name: 'Claude 3 Opus' },
       
       // OpenAI Models
-      { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI' },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI' },
+      { id: 'gpt-4o', name: 'GPT-4o' },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
       
       // Google Models
-      { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google' },
-      { id: 'gemini-flash', name: 'Gemini Flash', provider: 'Google' },
+      { id: 'gemini-pro', name: 'Gemini Pro' },
+      { id: 'gemini-flash', name: 'Gemini Flash' },
       
       // Meta Models
-      { id: 'llama-2-70b-chat', name: 'Llama 2 70B Chat', provider: 'Meta' },
-      { id: 'llama-3-8b-instruct', name: 'Llama 3 8B Instruct', provider: 'Meta' },
+      { id: 'llama-2-70b-chat', name: 'Llama 2 70B Chat' },
+      { id: 'llama-3-8b-instruct', name: 'Llama 3 8B Instruct' },
       
       // Mistral Models
-      { id: 'mistral-large', name: 'Mistral Large', provider: 'Mistral' },
-      { id: 'mistral-medium', name: 'Mistral Medium', provider: 'Mistral' },
+      { id: 'mistral-large', name: 'Mistral Large' },
+      { id: 'mistral-medium', name: 'Mistral Medium' },
       
       // Custom option
-      { id: 'custom', name: 'Custom Model', provider: 'Custom' }
+      { id: 'custom', name: 'Custom Model' }
     ];
   }
 };

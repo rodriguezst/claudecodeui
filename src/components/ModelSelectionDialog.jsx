@@ -53,8 +53,7 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
     const term = searchTerm.toLowerCase().trim();
     return models.filter(model =>
       model.name.toLowerCase().includes(term) ||
-      model.id.toLowerCase().includes(term) ||
-      model.provider.toLowerCase().includes(term)
+      model.id.toLowerCase().includes(term)
     );
   }, [models, searchTerm]);
 
@@ -136,7 +135,7 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
                       {model.name}
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      {model.provider} • {model.id}
+                      {model.id}
                     </div>
                   </div>
                 </div>

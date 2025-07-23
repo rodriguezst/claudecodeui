@@ -63,7 +63,7 @@ async function fetchModelsFromAPI() {
     // Transform the API response to our expected format
     // The API returns an object with provider keys, each containing models
     if (data && typeof data === 'object') {
-      availableModels = [];
+      const modelsMap = new Map(); // Use Map to deduplicate by model ID
       
       // Iterate through providers
       Object.keys(data).forEach(providerKey => {
@@ -73,23 +73,30 @@ async function fetchModelsFromAPI() {
           // Iterate through models for this provider
           Object.keys(provider.models).forEach(modelKey => {
             const model = provider.models[modelKey];
-            availableModels.push({
-              id: model.id || modelKey,
-              name: model.name || model.id || modelKey,
-              provider: provider.name || providerKey,
-              description: model.description || '',
-              context_length: model.limit?.context || null,
-              pricing: model.cost || null
-            });
+            const modelId = model.id || modelKey;
+            
+            // Only add if we haven't seen this model ID before
+            if (!modelsMap.has(modelId)) {
+              modelsMap.set(modelId, {
+                id: modelId,
+                name: model.name || model.id || modelKey,
+                description: model.description || '',
+                context_length: model.limit?.context || null,
+                pricing: model.cost || null
+              });
+            }
           });
         }
       });
+      
+      // Convert Map values to array
+      availableModels = Array.from(modelsMap.values());
     }
     
     // Add the custom option
-    availableModels.push({ id: 'custom', name: 'Custom Model', provider: 'Custom' });
+    availableModels.push({ id: 'custom', name: 'Custom Model' });
     
-    console.log(`✅ Successfully fetched ${availableModels.length} models from models.dev`);
+    console.log(`✅ Successfully fetched ${availableModels.length} unique models from models.dev`);
     return availableModels;
   } catch (error) {
     console.warn('⚠️ Failed to fetch models from models.dev API:', error.message);
@@ -98,30 +105,30 @@ async function fetchModelsFromAPI() {
     // Fallback to hardcoded list
     availableModels = [
       // Anthropic Models
-      { id: 'sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
-      { id: 'haiku', name: 'Claude 3.5 Haiku', provider: 'Anthropic' },
-      { id: 'opus', name: 'Claude 3 Opus', provider: 'Anthropic' },
+      { id: 'sonnet', name: 'Claude 3.5 Sonnet' },
+      { id: 'haiku', name: 'Claude 3.5 Haiku' },
+      { id: 'opus', name: 'Claude 3 Opus' },
       
       // OpenAI Models
-      { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI' },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI' },
+      { id: 'gpt-4o', name: 'GPT-4o' },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
       
       // Google Models
-      { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google' },
-      { id: 'gemini-flash', name: 'Gemini Flash', provider: 'Google' },
+      { id: 'gemini-pro', name: 'Gemini Pro' },
+      { id: 'gemini-flash', name: 'Gemini Flash' },
       
       // Meta Models
-      { id: 'llama-2-70b-chat', name: 'Llama 2 70B Chat', provider: 'Meta' },
-      { id: 'llama-3-8b-instruct', name: 'Llama 3 8B Instruct', provider: 'Meta' },
+      { id: 'llama-2-70b-chat', name: 'Llama 2 70B Chat' },
+      { id: 'llama-3-8b-instruct', name: 'Llama 3 8B Instruct' },
       
       // Mistral Models
-      { id: 'mistral-large', name: 'Mistral Large', provider: 'Mistral' },
-      { id: 'mistral-medium', name: 'Mistral Medium', provider: 'Mistral' },
+      { id: 'mistral-large', name: 'Mistral Large' },
+      { id: 'mistral-medium', name: 'Mistral Medium' },
       
       // Custom option
-      { id: 'custom', name: 'Custom Model', provider: 'Custom' }
+      { id: 'custom', name: 'Custom Model' }
     ];
     
     return availableModels;
