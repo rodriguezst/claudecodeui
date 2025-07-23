@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { X, Search } from 'lucide-react';
-import { fetchModelsFromAPI, getDefaultModel } from '../utils/models';
+import { fetchModelsFromAPI, getDefaultModel, getCustomModelId } from '../utils/models';
 
 function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
   const [models, setModels] = useState([]);
@@ -26,6 +26,12 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
       // Set default selection
       const defaultModel = getDefaultModel();
       setSelectedModel(defaultModel);
+      
+      // If default model is custom, load the custom model ID
+      if (defaultModel === 'custom') {
+        const customModelId = getCustomModelId();
+        setCustomModel(customModelId);
+      }
     } catch (error) {
       console.error('Error loading models:', error);
     } finally {
@@ -46,6 +52,20 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
     model.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     model.provider.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Sort filtered models to show selected model and custom option on top
+  const sortedModels = [...filteredModels].sort((a, b) => {
+    // Selected model goes first
+    if (a.id === selectedModel && b.id !== selectedModel) return -1;
+    if (b.id === selectedModel && a.id !== selectedModel) return 1;
+    
+    // Custom option goes second (after selected, if different)
+    if (a.id === 'custom' && b.id !== 'custom' && b.id !== selectedModel) return -1;
+    if (b.id === 'custom' && a.id !== 'custom' && a.id !== selectedModel) return 1;
+    
+    // Keep original order for others
+    return 0;
+  });
 
   if (!isOpen) return null;
 
@@ -86,7 +106,7 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
             </div>
           ) : (
             <>
-              {filteredModels.map((model) => (
+              {sortedModels.map((model) => (
                 <label
                   key={model.id}
                   className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
@@ -114,7 +134,7 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
                 </label>
               ))}
               
-              {filteredModels.length === 0 && (
+              {sortedModels.length === 0 && (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
                   No models found matching your search.
                 </div>
