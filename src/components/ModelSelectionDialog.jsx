@@ -107,13 +107,14 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
           ) : (
             <>
               {sortedModels.map((model) => (
-                <label
+                <div
                   key={model.id}
                   className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
                     selectedModel === model.id
                       ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
                       : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50'
                   }`}
+                  onClick={() => setSelectedModel(model.id)}
                 >
                   <input
                     type="radio"
@@ -121,9 +122,9 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
                     value={model.id}
                     checked={selectedModel === model.id}
                     onChange={(e) => setSelectedModel(e.target.value)}
-                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 pointer-events-none"
                   />
-                  <div className="ml-3 flex-1">
+                  <div className="ml-3 flex-1 pointer-events-none">
                     <div className="font-medium text-gray-900 dark:text-white">
                       {model.name}
                     </div>
@@ -131,7 +132,7 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
                       {model.provider} • {model.id}
                     </div>
                   </div>
-                </label>
+                </div>
               ))}
               
               {sortedModels.length === 0 && (
