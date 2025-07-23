@@ -45,6 +45,75 @@ import mcpRoutes from './routes/mcp.js';
 import { initializeDatabase } from './database/db.js';
 import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
 
+// Global variable to store models fetched from models.dev API
+let availableModels = [];
+
+// Function to fetch models from models.dev API on server startup
+async function fetchModelsFromAPI() {
+  try {
+    console.log('🔄 Fetching models from models.dev API...');
+    const response = await fetch('https://models.dev/api.json');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Transform the API response to our expected format
+    if (data && Array.isArray(data)) {
+      availableModels = data.map(model => ({
+        id: model.id || model.name,
+        name: model.name || model.id,
+        provider: model.provider || 'Unknown',
+        description: model.description || '',
+        context_length: model.context_length || null,
+        pricing: model.pricing || null
+      }));
+    }
+    
+    // Add the custom option
+    availableModels.push({ id: 'custom', name: 'Custom Model', provider: 'Custom' });
+    
+    console.log(`✅ Successfully fetched ${availableModels.length} models from models.dev`);
+    return availableModels;
+  } catch (error) {
+    console.warn('⚠️ Failed to fetch models from models.dev API:', error.message);
+    console.log('🔄 Using fallback model list...');
+    
+    // Fallback to hardcoded list
+    availableModels = [
+      // Anthropic Models
+      { id: 'sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic' },
+      { id: 'haiku', name: 'Claude 3.5 Haiku', provider: 'Anthropic' },
+      { id: 'opus', name: 'Claude 3 Opus', provider: 'Anthropic' },
+      
+      // OpenAI Models
+      { id: 'gpt-4o', name: 'GPT-4o', provider: 'OpenAI' },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI' },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI' },
+      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', provider: 'OpenAI' },
+      
+      // Google Models
+      { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google' },
+      { id: 'gemini-flash', name: 'Gemini Flash', provider: 'Google' },
+      
+      // Meta Models
+      { id: 'llama-2-70b-chat', name: 'Llama 2 70B Chat', provider: 'Meta' },
+      { id: 'llama-3-8b-instruct', name: 'Llama 3 8B Instruct', provider: 'Meta' },
+      
+      // Mistral Models
+      { id: 'mistral-large', name: 'Mistral Large', provider: 'Mistral' },
+      { id: 'mistral-medium', name: 'Mistral Medium', provider: 'Mistral' },
+      
+      // Custom option
+      { id: 'custom', name: 'Custom Model', provider: 'Custom' }
+    ];
+    
+    return availableModels;
+  }
+}
+
 // File system watcher for projects folder
 let projectsWatcher = null;
 const connectedClients = new Set();
@@ -176,9 +245,6 @@ app.use('/api/git', authenticateToken, gitRoutes);
 // MCP API Routes (protected)
 app.use('/api/mcp', authenticateToken, mcpRoutes);
 
-// Static files served after API routes
-app.use(express.static(path.join(__dirname, '../dist')));
-
 // API Routes (protected)
 app.get('/api/config', authenticateToken, (req, res) => {
   const host = req.headers.host || `${req.hostname}:${PORT}`;
@@ -213,6 +279,11 @@ app.post('/api/config', authenticateToken, (req, res) => {
     console.error('Error updating config:', error);
     res.status(500).json({ error: error.message });
   }
+});
+
+// Models API endpoint (protected)
+app.get('/api/models', authenticateToken, (req, res) => {
+  res.json({ models: availableModels });
 });
 
 app.get('/api/projects', authenticateToken, async (req, res) => {
@@ -911,6 +982,9 @@ app.post('/api/projects/:projectName/upload-images', authenticateToken, async (r
   }
 });
 
+// Static files served after all API routes
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
@@ -1005,6 +1079,9 @@ async function startServer() {
     // Initialize authentication database
     await initializeDatabase();
     console.log('✅ Database initialization skipped (testing)');
+    
+    // Fetch models from models.dev API on startup
+    await fetchModelsFromAPI();
     
     server.listen(PORT, '0.0.0.0', async () => {
       console.log(`Claude Code UI server running on http://0.0.0.0:${PORT}`);
