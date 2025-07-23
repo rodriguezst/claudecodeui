@@ -188,8 +188,31 @@ app.get('/api/config', authenticateToken, (req, res) => {
   
   res.json({
     serverPort: PORT,
-    wsUrl: `${protocol}://${host}`
+    wsUrl: `${protocol}://${host}`,
+    anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL || ''
   });
+});
+
+app.post('/api/config', authenticateToken, (req, res) => {
+  try {
+    const { anthropicBaseUrl } = req.body;
+    
+    // Update environment variable for new sessions
+    if (anthropicBaseUrl !== undefined) {
+      if (anthropicBaseUrl.trim()) {
+        process.env.ANTHROPIC_BASE_URL = anthropicBaseUrl.trim();
+        console.log('🔗 Updated ANTHROPIC_BASE_URL environment variable:', anthropicBaseUrl);
+      } else {
+        delete process.env.ANTHROPIC_BASE_URL;
+        console.log('🔗 Cleared ANTHROPIC_BASE_URL environment variable');
+      }
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating config:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 app.get('/api/projects', authenticateToken, async (req, res) => {

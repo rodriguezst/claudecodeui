@@ -25,6 +25,7 @@ import ClaudeLogo from './ClaudeLogo.jsx';
 import ClaudeStatus from './ClaudeStatus';
 import { MicButton } from './MicButton.jsx';
 import { api } from '../utils/api';
+import { getDefaultModel, getAnthropicBaseUrl } from '../utils/models';
 
 // Memoized message component to prevent unnecessary re-renders
 const MessageComponent = memo(({ message, index, prevMessage, createDiff, onFileOpen, onShowSettings, autoExpandTools, showRawParameters }) => {
@@ -1945,6 +1946,19 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
 
     const toolsSettings = getToolsSettings();
 
+    // Get model and base URL settings
+    let selectedModel = getDefaultModel();
+    const anthropicBaseUrl = getAnthropicBaseUrl();
+    
+    // For new sessions, check if user just selected a model
+    if (!currentSessionId) {
+      const pendingModel = localStorage.getItem('pendingSessionModel');
+      if (pendingModel) {
+        selectedModel = pendingModel;
+        localStorage.removeItem('pendingSessionModel'); // Clear it after use
+      }
+    }
+
     // Send command to Claude CLI via WebSocket with images
     sendMessage({
       type: 'claude-command',
@@ -1956,7 +1970,9 @@ function ChatInterface({ selectedProject, selectedSession, ws, sendMessage, mess
         resume: !!currentSessionId,
         toolsSettings: toolsSettings,
         permissionMode: permissionMode,
-        images: uploadedImages // Pass images to backend
+        images: uploadedImages, // Pass images to backend
+        model: selectedModel,
+        anthropicBaseUrl: anthropicBaseUrl
       }
     });
 

@@ -25,6 +25,7 @@ import MainContent from './components/MainContent';
 import MobileNav from './components/MobileNav';
 import ToolsSettings from './components/ToolsSettings';
 import QuickSettingsPanel from './components/QuickSettingsPanel';
+import ModelSelectionDialog from './components/ModelSelectionDialog';
 
 import { useWebSocket } from './utils/websocket';
 import { ThemeProvider } from './contexts/ThemeContext';
@@ -52,6 +53,8 @@ function AppContent() {
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [showToolsSettings, setShowToolsSettings] = useState(false);
   const [showQuickSettings, setShowQuickSettings] = useState(false);
+  const [showModelSelectionDialog, setShowModelSelectionDialog] = useState(false);
+  const [pendingNewSessionProject, setPendingNewSessionProject] = useState(null);
   const [autoExpandTools, setAutoExpandTools] = useState(() => {
     const saved = localStorage.getItem('autoExpandTools');
     return saved !== null ? JSON.parse(saved) : false;
@@ -277,13 +280,33 @@ function AppContent() {
   };
 
   const handleNewSession = (project) => {
-    setSelectedProject(project);
-    setSelectedSession(null);
-    setActiveTab('chat');
-    navigate('/');
-    if (isMobile) {
-      setSidebarOpen(false);
+    // Show model selection dialog first
+    setPendingNewSessionProject(project);
+    setShowModelSelectionDialog(true);
+  };
+
+  const handleModelSelected = (modelId) => {
+    if (pendingNewSessionProject) {
+      setSelectedProject(pendingNewSessionProject);
+      setSelectedSession(null);
+      setActiveTab('chat');
+      navigate('/');
+      
+      // Store the selected model for session creation
+      localStorage.setItem('pendingSessionModel', modelId);
+      
+      if (isMobile) {
+        setSidebarOpen(false);
+      }
+      
+      // Clear pending state
+      setPendingNewSessionProject(null);
     }
+  };
+
+  const handleModelSelectionCancel = () => {
+    setShowModelSelectionDialog(false);
+    setPendingNewSessionProject(null);
   };
 
   const handleSessionDelete = (sessionId) => {
@@ -639,6 +662,13 @@ function AppContent() {
 
       {/* Version Upgrade Modal */}
       <VersionUpgradeModal />
+
+      {/* Model Selection Dialog */}
+      <ModelSelectionDialog
+        isOpen={showModelSelectionDialog}
+        onClose={handleModelSelectionCancel}
+        onSelectModel={handleModelSelected}
+      />
     </div>
   );
 }
