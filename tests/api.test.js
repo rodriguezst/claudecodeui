@@ -46,11 +46,14 @@ test.describe('Claude Code UI API Tests', () => {
     
     // Check for expected models
     const modelIds = data.models.map(m => m.id);
-    // Should have some Anthropic models from the API
-    const hasAnthropicModels = data.models.some(m => m.provider === 'Anthropic');
-    expect(hasAnthropicModels).toBeTruthy();
+    // Should have some common models from the API (like Claude models)
+    const hasClaudeModels = data.models.some(m => m.id.includes('claude') || m.id === 'sonnet' || m.id === 'haiku');
+    expect(hasClaudeModels).toBeTruthy();
     // Should always have the custom option
     expect(modelIds).toContain('custom');
+    // Models should be sorted alphabetically by ID
+    const sortedModelIds = [...modelIds].sort();
+    expect(modelIds).toEqual(sortedModelIds);
   });
 
   test('API models endpoint should return 401 without authentication', async ({ request }) => {

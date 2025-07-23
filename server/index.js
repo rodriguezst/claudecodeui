@@ -96,6 +96,9 @@ async function fetchModelsFromAPI() {
     // Add the custom option
     availableModels.push({ id: 'custom', name: 'Custom Model' });
     
+    // Sort all models alphabetically by model ID
+    availableModels.sort((a, b) => a.id.localeCompare(b.id));
+    
     console.log(`✅ Successfully fetched ${availableModels.length} unique models from models.dev`);
     return availableModels;
   } catch (error) {
@@ -104,20 +107,23 @@ async function fetchModelsFromAPI() {
     
     // Fallback to hardcoded list
     availableModels = [
+      // Custom option
+      { id: 'custom', name: 'Custom Model' },
+      
       // Anthropic Models
-      { id: 'sonnet', name: 'Claude 3.5 Sonnet' },
       { id: 'haiku', name: 'Claude 3.5 Haiku' },
       { id: 'opus', name: 'Claude 3 Opus' },
+      { id: 'sonnet', name: 'Claude 3.5 Sonnet' },
       
       // OpenAI Models
+      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
       { id: 'gpt-4o', name: 'GPT-4o' },
       { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
-      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
-      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
       
       // Google Models
-      { id: 'gemini-pro', name: 'Gemini Pro' },
       { id: 'gemini-flash', name: 'Gemini Flash' },
+      { id: 'gemini-pro', name: 'Gemini Pro' },
       
       // Meta Models
       { id: 'llama-2-70b-chat', name: 'Llama 2 70B Chat' },
@@ -125,10 +131,7 @@ async function fetchModelsFromAPI() {
       
       // Mistral Models
       { id: 'mistral-large', name: 'Mistral Large' },
-      { id: 'mistral-medium', name: 'Mistral Medium' },
-      
-      // Custom option
-      { id: 'custom', name: 'Custom Model' }
+      { id: 'mistral-medium', name: 'Mistral Medium' }
     ];
     
     return availableModels;
