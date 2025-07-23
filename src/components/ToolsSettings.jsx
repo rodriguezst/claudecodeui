@@ -5,7 +5,7 @@ import { ScrollArea } from './ui/scroll-area';
 import { Badge } from './ui/badge';
 import { X, Plus, Settings, Shield, AlertTriangle, Moon, Sun, Server, Edit3, Trash2, Play, Globe, Terminal, Zap, Bot } from 'lucide-react';
 import { useTheme } from '../contexts/ThemeContext';
-import { fetchModelsFromAPI, getDefaultModel, setDefaultModel, getAnthropicBaseUrl, setAnthropicBaseUrl } from '../utils/models';
+import { fetchModelsFromAPI, getDefaultModel, setDefaultModel, getAnthropicBaseUrl, setAnthropicBaseUrl, getCustomModelId, setCustomModelId } from '../utils/models';
 
 function ToolsSettings({ isOpen, onClose }) {
   const { isDarkMode, toggleDarkMode } = useTheme();
@@ -18,6 +18,7 @@ function ToolsSettings({ isOpen, onClose }) {
   const [saveStatus, setSaveStatus] = useState(null);
   const [projectSortOrder, setProjectSortOrder] = useState('name');
   const [defaultModel, setDefaultModelState] = useState('sonnet');
+  const [customModelId, setCustomModelIdState] = useState('');
   const [anthropicBaseUrl, setAnthropicBaseUrlState] = useState('');
   const [availableModels, setAvailableModels] = useState([]);
   const [modelsLoading, setModelsLoading] = useState(false);
@@ -300,6 +301,7 @@ function ToolsSettings({ isOpen, onClose }) {
 
       // Load model settings
       setDefaultModelState(getDefaultModel());
+      setCustomModelIdState(getCustomModelId());
       
       // Load Anthropic base URL - first try localStorage, then server config
       let baseUrl = getAnthropicBaseUrl();
@@ -343,6 +345,7 @@ function ToolsSettings({ isOpen, onClose }) {
       setSkipPermissions(false);
       setProjectSortOrder('name');
       setDefaultModelState('sonnet');
+      setCustomModelIdState('');
       setAnthropicBaseUrlState('');
     }
   };
@@ -366,6 +369,7 @@ function ToolsSettings({ isOpen, onClose }) {
       
       // Save model settings
       setDefaultModel(defaultModel);
+      setCustomModelId(customModelId);
       setAnthropicBaseUrl(anthropicBaseUrl);
       
       // Update server environment for new sessions
@@ -716,6 +720,24 @@ function ToolsSettings({ isOpen, onClose }) {
                   </option>
                 ))}
               </select>
+            )}
+            
+            {/* Custom Model ID Input - only shown when 'custom' is selected */}
+            {defaultModel === 'custom' && (
+              <div className="mt-3">
+                <div className="font-medium text-foreground mb-2">
+                  Custom Model ID
+                </div>
+                <div className="text-sm text-muted-foreground mb-3">
+                  Enter the model ID for your custom model
+                </div>
+                <Input
+                  value={customModelId}
+                  onChange={(e) => setCustomModelIdState(e.target.value)}
+                  placeholder="e.g., my-custom-model"
+                  className="w-full"
+                />
+              </div>
             )}
           </div>
           
