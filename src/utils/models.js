@@ -1,8 +1,9 @@
 // Utility functions for fetching and managing models
+import { authenticatedFetch } from './api.js';
 
 export const fetchModelsFromAPI = async () => {
   try {
-    const response = await fetch('/api/models');
+    const response = await authenticatedFetch('/api/models');
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
