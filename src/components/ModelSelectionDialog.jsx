@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { X, Search } from 'lucide-react';
@@ -47,25 +47,32 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
     }
   };
 
-  const filteredModels = models.filter(model =>
-    model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    model.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    model.provider.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredModels = React.useMemo(() => {
+    if (!searchTerm.trim()) return models;
+    
+    const term = searchTerm.toLowerCase().trim();
+    return models.filter(model =>
+      model.name.toLowerCase().includes(term) ||
+      model.id.toLowerCase().includes(term) ||
+      model.provider.toLowerCase().includes(term)
+    );
+  }, [models, searchTerm]);
 
   // Sort filtered models to show selected model and custom option on top
-  const sortedModels = [...filteredModels].sort((a, b) => {
-    // Selected model goes first
-    if (a.id === selectedModel && b.id !== selectedModel) return -1;
-    if (b.id === selectedModel && a.id !== selectedModel) return 1;
-    
-    // Custom option goes second (after selected, if different)
-    if (a.id === 'custom' && b.id !== 'custom' && b.id !== selectedModel) return -1;
-    if (b.id === 'custom' && a.id !== 'custom' && a.id !== selectedModel) return 1;
-    
-    // Keep original order for others
-    return 0;
-  });
+  const sortedModels = React.useMemo(() => {
+    return [...filteredModels].sort((a, b) => {
+      // Selected model goes first
+      if (a.id === selectedModel && b.id !== selectedModel) return -1;
+      if (b.id === selectedModel && a.id !== selectedModel) return 1;
+      
+      // Custom option goes second (after selected, if different)
+      if (a.id === 'custom' && b.id !== 'custom' && b.id !== selectedModel) return -1;
+      if (b.id === 'custom' && a.id !== 'custom' && a.id !== selectedModel) return 1;
+      
+      // Keep original order for others
+      return 0;
+    });
+  }, [filteredModels, selectedModel]);
 
   if (!isOpen) return null;
 
@@ -142,6 +149,16 @@ function ModelSelectionDialog({ isOpen, onClose, onSelectModel }) {
               )}
             </>
           )}
+        </div>
+
+        {/* Selected Model Display */}
+        <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            <span className="font-medium">Selected model:</span>{' '}
+            <span className="text-gray-900 dark:text-white">
+              {selectedModel || 'None'}
+            </span>
+          </div>
         </div>
 
         {/* Custom Model Input */}
