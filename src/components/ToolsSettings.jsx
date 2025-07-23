@@ -47,7 +47,7 @@ function ToolsSettings({ isOpen, onClose }) {
   const [mcpConfigTested, setMcpConfigTested] = useState(false);
   const [mcpServerTools, setMcpServerTools] = useState({});
   const [mcpToolsLoading, setMcpToolsLoading] = useState({});
-  const [activeTab, setActiveTab] = useState('tools');
+  const [activeTab, setActiveTab] = useState('model');
 
   // Common tool patterns
   const commonTools = [
@@ -595,6 +595,16 @@ function ToolsSettings({ isOpen, onClose }) {
           <div className="border-b border-border">
             <div className="flex px-4 md:px-6">
               <button
+                onClick={() => setActiveTab('model')}
+                className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === 'model'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Model
+              </button>
+              <button
                 onClick={() => setActiveTab('tools')}
                 className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === 'tools'
@@ -619,6 +629,86 @@ function ToolsSettings({ isOpen, onClose }) {
 
           <div className="p-4 md:p-6 space-y-6 md:space-y-8 pb-safe-area-inset-bottom">
             
+            {/* Model Tab */}
+            {activeTab === 'model' && (
+              <div className="space-y-6 md:space-y-8">
+                {/* Model Settings */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Bot className="w-5 h-5 text-purple-500" />
+                    <h3 className="text-lg font-medium text-foreground">
+                      Model Settings
+                    </h3>
+                  </div>
+                  
+                  <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                    <div className="space-y-4">
+                      <div>
+                        <div className="font-medium text-foreground mb-2">
+                          Default Model
+                        </div>
+                        <div className="text-sm text-muted-foreground mb-3">
+                          Model to use by default when creating new sessions
+                        </div>
+                        
+                        {modelsLoading ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
+                            Loading models...
+                          </div>
+                        ) : (
+                          <select
+                            value={defaultModel}
+                            onChange={(e) => setDefaultModelState(e.target.value)}
+                            className="w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2"
+                          >
+                            {availableModels.map(model => (
+                              <option key={model.id} value={model.id}>
+                                {model.name} ({model.provider})
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                        
+                        {/* Custom Model ID Input - only shown when 'custom' is selected */}
+                        {defaultModel === 'custom' && (
+                          <div className="mt-3">
+                            <div className="font-medium text-foreground mb-2">
+                              Custom Model ID
+                            </div>
+                            <div className="text-sm text-muted-foreground mb-3">
+                              Enter the model ID for your custom model
+                            </div>
+                            <Input
+                              value={customModelId}
+                              onChange={(e) => setCustomModelIdState(e.target.value)}
+                              placeholder="e.g., my-custom-model"
+                              className="w-full"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <div className="font-medium text-foreground mb-2">
+                          Anthropic SDK Base URL
+                        </div>
+                        <div className="text-sm text-muted-foreground mb-3">
+                          Override the default Anthropic API base URL (leave empty for default)
+                        </div>
+                        <Input
+                          value={anthropicBaseUrl}
+                          onChange={(e) => setAnthropicBaseUrlState(e.target.value)}
+                          placeholder="https://api.anthropic.com"
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Appearance Tab */}
             {activeTab === 'appearance' && (
               <div className="space-y-6 md:space-y-8">
@@ -680,81 +770,6 @@ function ToolsSettings({ isOpen, onClose }) {
             <option value="name">Alphabetical</option>
             <option value="date">Recent Activity</option>
           </select>
-        </div>
-      </div>
-    </div>
-
-    {/* Default Model Settings */}
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Bot className="w-5 h-5 text-purple-500" />
-        <h3 className="text-lg font-medium text-foreground">
-          Model Settings
-        </h3>
-      </div>
-      
-      <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <div className="space-y-4">
-          <div>
-            <div className="font-medium text-foreground mb-2">
-              Default Model
-            </div>
-            <div className="text-sm text-muted-foreground mb-3">
-              Model to use by default when creating new sessions
-            </div>
-            
-            {modelsLoading ? (
-              <div className="flex items-center gap-2 text-sm text-gray-500">
-                <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
-                Loading models...
-              </div>
-            ) : (
-              <select
-                value={defaultModel}
-                onChange={(e) => setDefaultModelState(e.target.value)}
-                className="w-full text-sm bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 rounded-lg focus:ring-blue-500 focus:border-blue-500 p-2"
-              >
-                {availableModels.map(model => (
-                  <option key={model.id} value={model.id}>
-                    {model.name} ({model.provider})
-                  </option>
-                ))}
-              </select>
-            )}
-            
-            {/* Custom Model ID Input - only shown when 'custom' is selected */}
-            {defaultModel === 'custom' && (
-              <div className="mt-3">
-                <div className="font-medium text-foreground mb-2">
-                  Custom Model ID
-                </div>
-                <div className="text-sm text-muted-foreground mb-3">
-                  Enter the model ID for your custom model
-                </div>
-                <Input
-                  value={customModelId}
-                  onChange={(e) => setCustomModelIdState(e.target.value)}
-                  placeholder="e.g., my-custom-model"
-                  className="w-full"
-                />
-              </div>
-            )}
-          </div>
-          
-          <div>
-            <div className="font-medium text-foreground mb-2">
-              Anthropic SDK Base URL
-            </div>
-            <div className="text-sm text-muted-foreground mb-3">
-              Override the default Anthropic API base URL (leave empty for default)
-            </div>
-            <Input
-              value={anthropicBaseUrl}
-              onChange={(e) => setAnthropicBaseUrlState(e.target.value)}
-              placeholder="https://api.anthropic.com"
-              className="w-full"
-            />
-          </div>
         </div>
       </div>
     </div>
