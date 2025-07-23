@@ -16,7 +16,7 @@ test.describe('Claude Code UI API Tests', () => {
       // User already exists, try login instead
       const loginResponse = await request.post('/api/auth/login', {
         data: {
-          username: 'testuser',
+          username: 'testuser2',
           password: 'testpass123'
         }
       });
@@ -46,7 +46,10 @@ test.describe('Claude Code UI API Tests', () => {
     
     // Check for expected models
     const modelIds = data.models.map(m => m.id);
-    expect(modelIds).toContain('sonnet');
+    // Should have some Anthropic models from the API
+    const hasAnthropicModels = data.models.some(m => m.provider === 'Anthropic');
+    expect(hasAnthropicModels).toBeTruthy();
+    // Should always have the custom option
     expect(modelIds).toContain('custom');
   });
 

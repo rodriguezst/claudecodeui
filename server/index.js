@@ -61,15 +61,29 @@ async function fetchModelsFromAPI() {
     const data = await response.json();
     
     // Transform the API response to our expected format
-    if (data && Array.isArray(data)) {
-      availableModels = data.map(model => ({
-        id: model.id || model.name,
-        name: model.name || model.id,
-        provider: model.provider || 'Unknown',
-        description: model.description || '',
-        context_length: model.context_length || null,
-        pricing: model.pricing || null
-      }));
+    // The API returns an object with provider keys, each containing models
+    if (data && typeof data === 'object') {
+      availableModels = [];
+      
+      // Iterate through providers
+      Object.keys(data).forEach(providerKey => {
+        const provider = data[providerKey];
+        
+        if (provider && provider.models && typeof provider.models === 'object') {
+          // Iterate through models for this provider
+          Object.keys(provider.models).forEach(modelKey => {
+            const model = provider.models[modelKey];
+            availableModels.push({
+              id: model.id || modelKey,
+              name: model.name || model.id || modelKey,
+              provider: provider.name || providerKey,
+              description: model.description || '',
+              context_length: model.limit?.context || null,
+              pricing: model.cost || null
+            });
+          });
+        }
+      });
     }
     
     // Add the custom option
