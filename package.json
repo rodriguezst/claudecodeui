@@ -4,7 +4,11 @@
   "description": "A web-based UI for Claude Code CLI",
   "type": "module",
   "main": "server/index.js",
+  "bin": {
+    "claudecodeui": "server/index.js"
+  },
   "scripts": {
+    "prepare": "npm run build",
     "dev": "concurrently --kill-others \"npm run server\" \"npm run client\"",
     "server": "node server/index.js",
     "client": "vite --host",
