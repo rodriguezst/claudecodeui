@@ -56,6 +56,10 @@ function ToolsSettings({ isOpen, onClose }) {
     const saved = localStorage.getItem('claude-custom-api-key');
     return saved || '';
   });
+  const [customModelName, setCustomModelName] = useState(() => {
+    const saved = localStorage.getItem('claude-custom-model-name');
+    return saved || '';
+  });
 
   // Common tool patterns
   const commonTools = [
@@ -358,6 +362,9 @@ function ToolsSettings({ isOpen, onClose }) {
       if (apiKey) {
         localStorage.setItem('claude-custom-api-key', apiKey);
       }
+      if (customModelName) {
+        localStorage.setItem('claude-custom-model-name', customModelName);
+      }
       
       setSaveStatus('success');
       
@@ -654,6 +661,21 @@ function ToolsSettings({ isOpen, onClose }) {
                         
                         <div>
                           <label className="block text-sm font-medium text-foreground mb-2">
+                            Model Name
+                          </label>
+                          <Input
+                            value={customModelName}
+                            onChange={(e) => setCustomModelName(e.target.value)}
+                            placeholder="e.g., gpt-4-turbo, claude-3-sonnet-20240229, custom-model-name"
+                            className="w-full"
+                          />
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Specify the exact model name as expected by the API endpoint
+                          </p>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-foreground mb-2">
                             API Endpoint (optional)
                           </label>
                           <Input
@@ -710,15 +732,7 @@ function ToolsSettings({ isOpen, onClose }) {
     {/* Theme Settings */}
     <div className="space-y-4">
       <div className="bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="font-medium text-foreground">
-              Dark Mode
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Toggle between light and dark themes
-            </div>
-          </div>
+        <div className="flex flex-col items-center space-y-3">
           <button
             onClick={toggleDarkMode}
             className="relative inline-flex h-8 w-14 items-center rounded-full bg-gray-200 dark:bg-gray-700 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
@@ -739,6 +753,14 @@ function ToolsSettings({ isOpen, onClose }) {
               )}
             </span>
           </button>
+          <div className="text-center">
+            <div className="font-medium text-foreground">
+              Dark Mode
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Toggle between light and dark themes
+            </div>
+          </div>
         </div>
       </div>
     </div>
