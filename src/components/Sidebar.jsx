@@ -1295,7 +1295,7 @@ function Sidebar({
           onClick={onShowSettings}
         >
           <Settings className="w-3 h-3" />
-          <span className="text-xs">Tools Settings</span>
+          <span className="text-xs">Settings</span>
         </Button>
       </div>
     </div>

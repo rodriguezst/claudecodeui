@@ -45,6 +45,99 @@ import mcpRoutes from './routes/mcp.js';
 import { initializeDatabase } from './database/db.js';
 import { validateApiKey, authenticateToken, authenticateWebSocket } from './middleware/auth.js';
 
+// Global variable to store models fetched from models.dev API
+let availableModels = [];
+
+// Function to fetch models from models.dev API on server startup
+async function fetchModelsFromAPI() {
+  try {
+    console.log('🔄 Fetching models from models.dev API...');
+    const response = await fetch('https://models.dev/api.json');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    
+    // Transform the API response to our expected format
+    // The API returns an object with provider keys, each containing models
+    if (data && typeof data === 'object') {
+      const modelsMap = new Map(); // Use Map to deduplicate by model ID
+      
+      // Iterate through providers
+      Object.keys(data).forEach(providerKey => {
+        const provider = data[providerKey];
+        
+        if (provider && provider.models && typeof provider.models === 'object') {
+          // Iterate through models for this provider
+          Object.keys(provider.models).forEach(modelKey => {
+            const model = provider.models[modelKey];
+            const modelId = model.id || modelKey;
+            
+            // Only add if we haven't seen this model ID before
+            if (!modelsMap.has(modelId)) {
+              modelsMap.set(modelId, {
+                id: modelId,
+                name: model.name || model.id || modelKey,
+                description: model.description || '',
+                context_length: model.limit?.context || null,
+                pricing: model.cost || null
+              });
+            }
+          });
+        }
+      });
+      
+      // Convert Map values to array
+      availableModels = Array.from(modelsMap.values());
+    }
+    
+    // Add the custom option
+    availableModels.push({ id: 'custom', name: 'Custom Model' });
+    
+    // Sort all models alphabetically by model ID
+    availableModels.sort((a, b) => a.id.localeCompare(b.id));
+    
+    console.log(`✅ Successfully fetched ${availableModels.length} unique models from models.dev`);
+    return availableModels;
+  } catch (error) {
+    console.warn('⚠️ Failed to fetch models from models.dev API:', error.message);
+    console.log('🔄 Using fallback model list...');
+    
+    // Fallback to hardcoded list
+    availableModels = [
+      // Custom option
+      { id: 'custom', name: 'Custom Model' },
+      
+      // Anthropic Models
+      { id: 'haiku', name: 'Claude 3.5 Haiku' },
+      { id: 'opus', name: 'Claude 3 Opus' },
+      { id: 'sonnet', name: 'Claude 3.5 Sonnet' },
+      
+      // OpenAI Models
+      { id: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo' },
+      { id: 'gpt-4-turbo', name: 'GPT-4 Turbo' },
+      { id: 'gpt-4o', name: 'GPT-4o' },
+      { id: 'gpt-4o-mini', name: 'GPT-4o Mini' },
+      
+      // Google Models
+      { id: 'gemini-flash', name: 'Gemini Flash' },
+      { id: 'gemini-pro', name: 'Gemini Pro' },
+      
+      // Meta Models
+      { id: 'llama-2-70b-chat', name: 'Llama 2 70B Chat' },
+      { id: 'llama-3-8b-instruct', name: 'Llama 3 8B Instruct' },
+      
+      // Mistral Models
+      { id: 'mistral-large', name: 'Mistral Large' },
+      { id: 'mistral-medium', name: 'Mistral Medium' }
+    ];
+    
+    return availableModels;
+  }
+}
+
 // File system watcher for projects folder
 let projectsWatcher = null;
 const connectedClients = new Set();
@@ -176,9 +269,6 @@ app.use('/api/git', authenticateToken, gitRoutes);
 // MCP API Routes (protected)
 app.use('/api/mcp', authenticateToken, mcpRoutes);
 
-// Static files served after API routes
-app.use(express.static(path.join(__dirname, '../dist')));
-
 // API Routes (protected)
 app.get('/api/config', authenticateToken, (req, res) => {
   const host = req.headers.host || `${req.hostname}:${PORT}`;
@@ -188,8 +278,36 @@ app.get('/api/config', authenticateToken, (req, res) => {
   
   res.json({
     serverPort: PORT,
-    wsUrl: `${protocol}://${host}`
+    wsUrl: `${protocol}://${host}`,
+    anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL || ''
   });
+});
+
+app.post('/api/config', authenticateToken, (req, res) => {
+  try {
+    const { anthropicBaseUrl } = req.body;
+    
+    // Update environment variable for new sessions
+    if (anthropicBaseUrl !== undefined) {
+      if (anthropicBaseUrl.trim()) {
+        process.env.ANTHROPIC_BASE_URL = anthropicBaseUrl.trim();
+        console.log('🔗 Updated ANTHROPIC_BASE_URL environment variable:', anthropicBaseUrl);
+      } else {
+        delete process.env.ANTHROPIC_BASE_URL;
+        console.log('🔗 Cleared ANTHROPIC_BASE_URL environment variable');
+      }
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error updating config:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Models API endpoint (protected)
+app.get('/api/models', authenticateToken, (req, res) => {
+  res.json({ models: availableModels });
 });
 
 app.get('/api/projects', authenticateToken, async (req, res) => {
@@ -888,6 +1006,9 @@ app.post('/api/projects/:projectName/upload-images', authenticateToken, async (r
   }
 });
 
+// Static files served after all API routes
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // Serve React app for all other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist/index.html'));
@@ -982,6 +1103,9 @@ async function startServer() {
     // Initialize authentication database
     await initializeDatabase();
     console.log('✅ Database initialization skipped (testing)');
+    
+    // Fetch models from models.dev API on startup
+    await fetchModelsFromAPI();
     
     server.listen(PORT, '0.0.0.0', async () => {
       console.log(`Claude Code UI server running on http://0.0.0.0:${PORT}`);
