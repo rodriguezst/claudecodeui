@@ -31,7 +31,7 @@ export const useVersionCheck = (owner, repo) => {
     };
 
     checkVersion();
-    const interval = setInterval(checkVersion, 5 * 60 * 1000); // Check every 5 minutes
+    const interval = setInterval(checkVersion, 12 * 60 * 60 * 1000); // Check every 12 hours
     return () => clearInterval(interval);
   }, [owner, repo]);
 
