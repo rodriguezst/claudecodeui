@@ -6,9 +6,6 @@ const JWT_SECRET = process.env.CLAUDECODEUI_JWT_SECRET || 'claude-ui-dev-secret-
 
 // Optional API key middleware
 const validateApiKey = (req, res, next) => {
-  if (process.env.CLAUDECODEUI_DISABLE_AUTH === 'true') {
-    return next();
-  }
   if (!process.env.CLAUDECODEUI_API_KEY) {
     return next();
   }
