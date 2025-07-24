@@ -6,7 +6,9 @@ const JWT_SECRET = process.env.CLAUDECODEUI_JWT_SECRET || 'claude-ui-dev-secret-
 
 // Optional API key middleware
 const validateApiKey = (req, res, next) => {
-  // Skip API key validation if not configured
+  if (process.env.CLAUDECODEUI_DISABLE_AUTH === 'true') {
+    return next();
+  }
   if (!process.env.CLAUDECODEUI_API_KEY) {
     return next();
   }
@@ -20,6 +22,10 @@ const validateApiKey = (req, res, next) => {
 
 // JWT authentication middleware
 const authenticateToken = async (req, res, next) => {
+  if (process.env.CLAUDECODEUI_DISABLE_AUTH === 'true') {
+    req.user = { id: 'disabled', username: 'disabled' };
+    return next();
+  }
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1]; // Bearer TOKEN
 
@@ -58,10 +64,12 @@ const generateToken = (user) => {
 
 // WebSocket authentication function
 const authenticateWebSocket = (token) => {
+  if (process.env.CLAUDECODEUI_DISABLE_AUTH === 'true') {
+    return { id: 'disabled', username: 'disabled' };
+  }
   if (!token) {
     return null;
   }
-  
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     return decoded;

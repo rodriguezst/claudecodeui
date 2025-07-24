@@ -8,6 +8,10 @@ const router = express.Router();
 // Check auth status and setup requirements
 router.get('/status', async (req, res) => {
   try {
+    if (process.env.CLAUDECODEUI_DISABLE_AUTH === 'true') {
+      res.json({ needsSetup: false, isAuthenticated: true });
+      return;
+    }
     const hasUsers = await userDb.hasUsers();
     res.json({ 
       needsSetup: !hasUsers,
@@ -21,43 +25,37 @@ router.get('/status', async (req, res) => {
 
 // User registration (setup) - only allowed if no users exist
 router.post('/register', async (req, res) => {
+  if (process.env.CLAUDECODEUI_DISABLE_AUTH === 'true') {
+    return res.json({ success: true, user: { id: 'disabled', username: 'disabled' }, token: 'disabled' });
+  }
   try {
     const { username, password } = req.body;
-    
     // Validate input
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
-    
     if (username.length < 3 || password.length < 6) {
       return res.status(400).json({ error: 'Username must be at least 3 characters, password at least 6 characters' });
     }
-    
     // Check if users already exist (only allow one user)
     const hasUsers = userDb.hasUsers();
     if (hasUsers) {
       return res.status(403).json({ error: 'User already exists. This is a single-user system.' });
     }
-    
     // Hash password
     const saltRounds = 12;
     const passwordHash = await bcrypt.hash(password, saltRounds);
-    
     // Create user
     const user = userDb.createUser(username, passwordHash);
-    
     // Generate token
     const token = generateToken(user);
-    
     // Update last login
     userDb.updateLastLogin(user.id);
-    
     res.json({
       success: true,
       user: { id: user.id, username: user.username },
       token
     });
-    
   } catch (error) {
     console.error('Registration error:', error);
     if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
@@ -70,38 +68,34 @@ router.post('/register', async (req, res) => {
 
 // User login
 router.post('/login', async (req, res) => {
+  if (process.env.CLAUDECODEUI_DISABLE_AUTH === 'true') {
+    return res.json({ success: true, user: { id: 'disabled', username: 'disabled' }, token: 'disabled' });
+  }
   try {
     const { username, password } = req.body;
-    
     // Validate input
     if (!username || !password) {
       return res.status(400).json({ error: 'Username and password are required' });
     }
-    
     // Get user from database
     const user = userDb.getUserByUsername(username);
     if (!user) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
-    
     // Verify password
     const isValidPassword = await bcrypt.compare(password, user.password_hash);
     if (!isValidPassword) {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
-    
     // Generate token
     const token = generateToken(user);
-    
     // Update last login
     userDb.updateLastLogin(user.id);
-    
     res.json({
       success: true,
       user: { id: user.id, username: user.username },
       token
     });
-    
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Internal server error' });
