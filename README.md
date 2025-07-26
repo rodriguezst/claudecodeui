@@ -82,6 +82,19 @@ The application will start at the port you specified in your .env
 
 **🔒 Important Notice**: All Claude Code tools are **disabled by default**. This prevents potentially harmful operations from running automatically.
 
+### Default Tool Allowance
+
+You can control the default tool permission behavior using an environment variable:
+
+```bash
+# In your .env file
+CLAUDECODEUI_ALLOW_ALL_TOOLS_BY_DEFAULT=true
+```
+
+When set to `true`, the "Skip Permission Prompts" setting will be enabled by default for new installations. This is equivalent to running Claude Code with the `--dangerously-skip-permissions` flag.
+
+**⚠️ Security Warning**: Use this setting with caution in production environments, as it allows all tools to run without permission prompts.
+
 ### Enabling Tools
 
 To use Claude Code's full functionality, you'll need to manually enable tools:
