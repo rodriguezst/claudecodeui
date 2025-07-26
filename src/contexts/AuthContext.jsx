@@ -41,6 +41,15 @@ export const AuthProvider = ({ children }) => {
       const statusResponse = await api.auth.status();
       const statusData = await statusResponse.json();
       
+      // If auth is disabled, automatically authenticate user
+      if (statusData.isAuthenticated && !statusData.needsSetup) {
+        setUser({ id: 'disabled', username: 'disabled' });
+        setToken('disabled');
+        setNeedsSetup(false);
+        setIsLoading(false);
+        return;
+      }
+      
       if (statusData.needsSetup) {
         setNeedsSetup(true);
         setIsLoading(false);
