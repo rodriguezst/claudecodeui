@@ -281,6 +281,22 @@ function ToolsSettings({ isOpen, onClose }) {
 
   const loadSettings = async () => {
     try {
+      // Load server configuration first to get defaults
+      let serverConfig = {};
+      try {
+        const token = localStorage.getItem('auth-token');
+        const response = await fetch('/api/config', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (response.ok) {
+          serverConfig = await response.json();
+        }
+      } catch (error) {
+        console.error('Error loading server config:', error);
+      }
       
       // Load from localStorage
       const savedSettings = localStorage.getItem('claude-tools-settings');
@@ -292,10 +308,10 @@ function ToolsSettings({ isOpen, onClose }) {
         setSkipPermissions(settings.skipPermissions || false);
         setProjectSortOrder(settings.projectSortOrder || 'name');
       } else {
-        // Set defaults
+        // Set defaults, using server configuration for skipPermissions default
         setAllowedTools([]);
         setDisallowedTools([]);
-        setSkipPermissions(false);
+        setSkipPermissions(serverConfig.allowAllToolsByDefault || false);
         setProjectSortOrder('name');
       }
 
@@ -306,21 +322,7 @@ function ToolsSettings({ isOpen, onClose }) {
       // Load Anthropic base URL - first try localStorage, then server config
       let baseUrl = getAnthropicBaseUrl();
       if (!baseUrl) {
-        try {
-          const token = localStorage.getItem('auth-token');
-          const response = await fetch('/api/config', {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (response.ok) {
-            const config = await response.json();
-            baseUrl = config.anthropicBaseUrl || '';
-          }
-        } catch (error) {
-          console.error('Error loading server config:', error);
-        }
+        baseUrl = serverConfig.anthropicBaseUrl || '';
       }
       setAnthropicBaseUrlState(baseUrl);
       
@@ -342,7 +344,7 @@ function ToolsSettings({ isOpen, onClose }) {
       // Set defaults on error
       setAllowedTools([]);
       setDisallowedTools([]);
-      setSkipPermissions(false);
+      setSkipPermissions(false); // Use hardcoded false on error since we couldn't load server config
       setProjectSortOrder('name');
       setDefaultModelState('sonnet');
       setCustomModelIdState('');

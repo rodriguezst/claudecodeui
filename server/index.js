@@ -279,7 +279,8 @@ app.get('/api/config', authenticateToken, (req, res) => {
   res.json({
     serverPort: PORT,
     wsUrl: `${protocol}://${host}`,
-    anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL || ''
+    anthropicBaseUrl: process.env.ANTHROPIC_BASE_URL || '',
+    allowAllToolsByDefault: process.env.CLAUDECODEUI_ALLOW_ALL_TOOLS_BY_DEFAULT === 'true'
   });
 });
 
